@@ -5,6 +5,8 @@ from django.contrib.auth.models import AbstractBaseUser,PermissionsMixin
 from apps.authentication.utils import validate_number
 from django.contrib.auth.hashers import identify_hasher
 from apps.authentication.api.v1.services.user_manager import UserManager
+import random
+import string
 
 
 class User(CreatedUpdatedAbstractModel,AbstractBaseUser,PermissionsMixin):
@@ -37,6 +39,9 @@ class User(CreatedUpdatedAbstractModel,AbstractBaseUser,PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
+    telegram_auth_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
+    telegram_chat_id = models.CharField(max_length=100, unique=True, blank=True, null=True)
+
     objects = UserManager()
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
@@ -58,6 +63,13 @@ class User(CreatedUpdatedAbstractModel,AbstractBaseUser,PermissionsMixin):
                 identify_hasher(self.password)
             except ValueError:
                 self.set_password(self.password)
+
+        if not self.telegram_auth_code and not self.telegram_chat_id:
+            while True:
+                code = ''.join(random.choices(string.digits, k=6))
+                if not User.objects.filter(telegram_auth_code=code).exists():
+                    self.telegram_auth_code = code
+                    break
         super().save(*args, **kwargs)
 
 class Gallery(CreatedUpdatedAbstractModel):

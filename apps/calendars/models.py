@@ -33,6 +33,8 @@ class Appointment(CreatedUpdatedAbstractModel):
     notes = models.TextField(blank=True, null=True)
     status = models.CharField(choices=Status.choices,max_length=20,default=Status.IN_PROGRESS)
 
+    is_reminded = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.patient.full_name} - {self.doctor.full_name} ({self.date})"
 
