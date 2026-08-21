@@ -16,3 +16,6 @@ media/
 .idea/
 .vscode/
 *.swp
+celerybeat-schedule
+celerybeat-schedule.*
+celerybeat.pid
