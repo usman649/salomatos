@@ -20,7 +20,6 @@ class TelegramService(BaseService):
         chat_id = request.data.get('telegram_chat_id')
         phone_number = request.data.get('phone_number')
 
-        # 1-Holat: Bot faqat `telegram_chat_id` yubordi (/start bosilganda)
         if chat_id and not phone_number:
             patient = self.db.get_telegram_patient_by_chat_id(chat_id)
             if not patient:
@@ -34,10 +33,8 @@ class TelegramService(BaseService):
                 context={'request': request}
             )
 
-        # 2-Holat: Bot `phone_number` va `telegram_chat_id` yubordi (Kontakt yuborilganda)
         patient = self.db.get_telegram_patient(phone_number=phone_number)
 
-        # Bemor telefon raqamidan topilsa, uning chat_id sini bazaga saqlab qo'yamiz
         if chat_id:
             self.db.link_chat_id_to_patient(patient, chat_id)
 
@@ -88,10 +85,8 @@ class TelegramService(BaseService):
     def get_telegram_patient_appointments(self, request):
         phone_number = request.query_params.get('phone_number')
 
-        # Repository'dan qabullar ro'yxatini olamiz (agar raqam topilmasa exception repository'da ko'tariladi)
         appointments = self.db.get_telegram_patient_appointments(phone_number=phone_number)
 
-        # BaseService'dagi tayyor funksiya orqali formatlab javob qaytaramiz
         return self.get_response(
             appointments,
             AppointmentListSerializer,

@@ -67,12 +67,10 @@ class TelegramRepository():
         return recipe
 
     def get_telegram_patient_appointments(self, phone_number):
-        # 1. Avval siz yozgan tayyor funksiya orqali bemorni topib olamiz
         patient = self.get_telegram_patient(phone_number=phone_number)
 
         now = timezone.localtime(timezone.now())
 
-        # 2. Bemorga tegishli faol va bugungi/kelajakdagi qabullarni olamiz
         appointments = Appointment.objects.filter(
             patient=patient,
             date__gte=now.date(),

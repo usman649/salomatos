@@ -9,7 +9,7 @@ app = Celery('config')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
-# Celery Beat sozlamasi (Har 5 daqiqada tekshirib turish uchun)
+
 app.conf.beat_schedule = {
     'send-appointment-reminders-every-5-minutes': {
         'task': 'apps.core.tasks.send_appointment_reminders',

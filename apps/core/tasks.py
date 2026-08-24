@@ -13,20 +13,18 @@ load_dotenv()
 def send_appointment_reminders():
     now = timezone.localtime(timezone.now())
 
-    # Hozirdan boshlab 2 soat-u 5 daqiqagacha bo'lgan chegarani belgilaymiz
     current_time = now.time()
     max_reminder_time = (now + timedelta(hours=2, minutes=5)).time()
 
-    # Barcha filtrlashni to'g'ridan-to'g'ri Bazaning (ORM) o'zida bajaramiz
     appointments = Appointment.objects.filter(
         date=now.date(),
-        time__gte=current_time,          # Vaqti hali o'tib ketmagan
-        time__lte=max_reminder_time,     # 2 soat 5 minutdan kam vaqt qolgan
+        time__gte=current_time,
+        time__lte=max_reminder_time,
         is_reminded=False,
         status=Appointment.Status.IN_PROGRESS
-    ).select_related('patient', 'doctor', 'clinic') # Baza bilan so'rovlar sonini kamaytirish uchun
+    ).select_related('patient', 'doctor', 'clinic')
 
-    bot_token = os.getenv("BOT_TOKEN") # yoki settings.TELEGRAM_BOT_TOKEN
+    bot_token = os.getenv("BOT_TOKEN")
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     sent_count = 0
 
