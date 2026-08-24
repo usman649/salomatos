@@ -13,7 +13,7 @@ admin.site.index_title = "Welcome to SalomatOS project dashboard"
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="SalomatOS project API",
+        title="SalomatOS project ",
         default_version="v1",
         description="API for SalomatOS",
         terms_of_service="",
