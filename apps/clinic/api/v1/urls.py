@@ -23,6 +23,16 @@ urlpatterns = [
         name='doctor-detail-update-delete',
     ),
     path(
+        'doctors/types/',
+        views.DoctorTypeCreateListView.as_view(),
+        name='doctor-type-create-list',
+    ),
+    path(
+        'doctors/types/<int:pk>/',
+        views.DoctorTypeDetailUpdateDeleteView.as_view(),
+        name='doctor-type-detail-update',
+    ),
+    path(
         'treatments/',
         views.TreatmentCreateListView.as_view(),
         name='treatments-create-list',

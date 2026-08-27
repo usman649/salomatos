@@ -1,7 +1,9 @@
 from apps.clinic.api.v1.repositories.doctors import DoctorRepository
 from apps.clinic.api.v1.serializers.doctors import (
     DoctorListSerializer,
-    DoctorCreateUpdateSerializer
+    DoctorCreateUpdateSerializer,
+    DoctorTypeListSerializer,
+    DoctorTypeCreateUpdateSerializer
 )
 from apps.core.services import BaseService
 from rest_framework import status
@@ -67,5 +69,55 @@ class DoctorService(BaseService):
         )
 
 
+
+
+    def get_doctor_types(self,*args,**kwargs):
+        doctor_types = self.db.get_doctor_types(user=self.request.user)
+        return self.get_response(
+            doctor_types,
+            DoctorTypeListSerializer,
+            context={'request': self.request},
+            many=True
+        )
+
+    def create_doctor_type(self, *args, **kwargs):
+        serializer_class = DoctorTypeCreateUpdateSerializer(
+            data=self.request.data,
+            context={'request': self.request}
+        )
+        serializer_class.is_valid(raise_exception=True)
+
+        doctor_types = serializer_class.save(
+            clinic=self.request.user,
+        )
+        return self.get_response_object(
+            doctor_types,
+            DoctorTypeListSerializer,
+            context={'request': self.request},
+        )
+
+    def update_doctor_type(self,*args,**kwargs):
+        doctor_type = self.db.get_doctor_type(doctor_type_id=kwargs.get('pk'))
+        serializer_class = DoctorTypeCreateUpdateSerializer(
+            instance=doctor_type,
+            data=self.request.data,
+            partial=True,
+            context={'request': self.request}
+        )
+        serializer_class.is_valid(raise_exception=True)
+        serializer_class.save()
+        return self.get_response_object(
+            obj=doctor_type,
+            response_serializer_class=DoctorTypeListSerializer,
+            context={'request': self.request}
+        )
+
+    def delete_doctor_type(self,*args,**kwargs):
+        doctor_type = self.db.get_doctor_type(doctor_type_id=kwargs.get('pk'))
+        doctor_type.delete()
+        return self.get_response_object(
+            context={'request': self.request},
+            status_code=status.HTTP_204_NO_CONTENT,
+        )
 
 

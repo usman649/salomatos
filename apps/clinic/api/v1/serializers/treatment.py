@@ -47,6 +47,7 @@ class TreatmentTypeListSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     price = serializers.IntegerField()
+    doctor_type = serializers.CharField()
 
 class TreatmentTypeCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,4 +55,5 @@ class TreatmentTypeCreateUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'name',
             'price',
+            'doctor_type'
         ]

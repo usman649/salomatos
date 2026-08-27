@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-from apps.authentication.models import User, Gallery
+from apps.authentication.models import User, Gallery,DoctorType
 
 
 @admin.register(User)
@@ -15,3 +15,9 @@ class GalleryAdmin(admin.ModelAdmin):
     list_display = ['id', 'user']
     list_display_links = ['id', 'user']
     search_fields = ['user__username', 'user__full_name']
+
+@admin.register(DoctorType)
+class DoctorTypeAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name']
+    list_display_links = ['id', 'name']
+    search_fields = ['name']

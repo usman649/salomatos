@@ -32,6 +32,14 @@ class TreatmentType(CreatedUpdatedAbstractModel):
         limit_choices_to={'role':User.Roles.SUPERADMIN},
         null = True,
     )
+    doctor_type = models.ForeignKey(
+        'authentication.DoctorType',
+        on_delete=models.SET_NULL,
+        related_name = 'doctor_treatment_types',
+        blank = True,
+        null = True,
+
+    )
     name = models.CharField(max_length = 255)
     price = models.PositiveIntegerField(blank = True, null = True)
 

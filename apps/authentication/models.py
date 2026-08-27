@@ -26,14 +26,38 @@ class User(CreatedUpdatedAbstractModel,AbstractBaseUser,PermissionsMixin):
     office = models.CharField(max_length = 255,blank=True,null=True)
 
     # for doctors
-    specialty = models.CharField(max_length=255,blank=True,null=True)
+    doctor_type = models.ForeignKey(
+        'DoctorType',
+        on_delete=models.SET_NULL,
+        related_name='doctors',
+        blank=True,
+        null=True
+    )
     experience = models.PositiveIntegerField(blank=True,null=True)
     biography = models.TextField(blank=True,null=True)
 
 
-    clinic = models.ForeignKey('self',on_delete=models.CASCADE,related_name='clinic_users',limit_choices_to={'role': Roles.SUPERADMIN},blank=True,null=True)
-    role = models.CharField(choices = Roles.choices, default = Roles.PATIENT,max_length=200)
-    doctor = models.ForeignKey('self', on_delete=models.SET_NULL,related_name='patients',limit_choices_to={'role':Roles.DOCTOR},blank=True,null=True)
+    clinic = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        related_name='clinic_users',
+        limit_choices_to={'role': Roles.SUPERADMIN},
+        blank=True,
+        null=True
+    )
+    role = models.CharField(
+        choices = Roles.choices,
+        default = Roles.PATIENT,
+        max_length=200
+    )
+    doctor = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        related_name='patients',
+        limit_choices_to={'role':Roles.DOCTOR},
+        blank=True,
+        null=True
+    )
 
 
     is_active = models.BooleanField(default=True)
@@ -73,9 +97,32 @@ class User(CreatedUpdatedAbstractModel,AbstractBaseUser,PermissionsMixin):
         super().save(*args, **kwargs)
 
 class Gallery(CreatedUpdatedAbstractModel):
-    clinic = models.ForeignKey(User,on_delete=models.CASCADE,related_name = 'clinic_galleries',limit_choices_to={'role': User.Roles.SUPERADMIN},null=True)
-    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='gallery')
+    clinic = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name = 'clinic_galleries',
+        limit_choices_to={'role': User.Roles.SUPERADMIN},
+        null=True
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='gallery'
+    )
     image = models.ImageField(upload_to = 'images/',blank=True,null=True)
 
+
+class DoctorType(CreatedUpdatedAbstractModel):
+    name = models.CharField(max_length = 255)
+    clinic = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='clinic_doctor_types',
+        limit_choices_to={'role': User.Roles.SUPERADMIN},
+        null=True
+    )
+
+    def __str__(self):
+        return self.name
 
 

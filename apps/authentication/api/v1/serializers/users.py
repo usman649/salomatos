@@ -23,7 +23,6 @@ class UserLoginSerializer(serializers.Serializer):
 
 class UserMeSerializer(serializers.Serializer):
     full_name = serializers.CharField()
-    specialty = serializers.CharField()
     phone_number = serializers.CharField()
     email = serializers.EmailField()
     experience = serializers.IntegerField()
@@ -36,7 +35,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'full_name',
-            'specialty',
             'phone_number',
             'email',
             'experience',
