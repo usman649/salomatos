@@ -47,8 +47,16 @@ urlpatterns = [
         views.GalleryCreateView.as_view(),
         name='gallery-create',
     ),
-
-
+    path(
+        '',
+        views.ClinicCreateListView.as_view(),
+        name = 'clinic-create-list',
+    ),
+    path(
+        '<int:pk>/',
+        views.ClinicDetailUpdateDeleteView.as_view(),
+        name = 'clinic-detail-update-delete',
+    )
 
 
 ]

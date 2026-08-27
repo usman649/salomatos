@@ -2,8 +2,27 @@ from django.db import models
 from apps.core.models import CreatedUpdatedAbstractModel
 from apps.authentication.models import User
 from django.utils.translation import gettext_lazy as _
+from apps.authentication.utils import validate_number
 
 
+class Clinic(CreatedUpdatedAbstractModel):
+    admin = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name = 'clinic_admin',
+        limit_choices_to = {'role':User.Roles.SUPERADMIN},
+        null=True,
+        blank=True,
+    )
+    name = models.CharField(max_length = 255)
+    phone_number = models.CharField(max_length = 14,validators=[validate_number])
+    address = models.CharField(max_length = 255)
+    logo = models.ImageField(upload_to = 'clinic/logo',blank = True, null = True)
+
+    working_hours = models.JSONField(blank = True, null = True)
+
+    def __str__(self):
+        return self.name
 
 class TreatmentType(CreatedUpdatedAbstractModel):
     clinic = models.ForeignKey(
