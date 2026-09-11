@@ -5,12 +5,12 @@ from apps.core.models import (
 )
 
 class RecipeRepository():
-    def get_recipes(self,user):
-        recipes = Recipe.objects.filter(clinic=user)
+    def get_recipes(self,clinic_id):
+        recipes = Recipe.objects.filter(clinic=clinic_id)
         return recipes
 
-    def get_recipe(self,recipe_id):
-        recipe = Recipe.objects.filter(id=recipe_id).first()
+    def get_recipe(self,recipe_id,clinic_id):
+        recipe = Recipe.objects.filter(id=recipe_id,clinic=clinic_id).first()
         if not recipe:
             raise ObjectNotFoundException(
                 message="Recipe not found.",

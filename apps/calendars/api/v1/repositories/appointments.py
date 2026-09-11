@@ -3,13 +3,13 @@ from apps.calendars.models import Appointment
 
 
 class AppointmentRepository:
-    def get_appointments(self,user):
-        appointment = Appointment.objects.filter(clinic=user)
+    def get_appointments(self,clinic_id):
+        appointment = Appointment.objects.filter(clinic=clinic_id)
         return appointment
 
 
-    def get_appointment(self,appointment_id):
-        appointment = Appointment.objects.filter(id=appointment_id).first()
+    def get_appointment(self,appointment_id,clinic_id):
+        appointment = Appointment.objects.filter(id=appointment_id,clinic=clinic_id).first()
         if not appointment:
             raise ObjectNotFoundException(
                 message='Appointment not found',

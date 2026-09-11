@@ -20,7 +20,7 @@ class PatientService(BaseService):
         self.db = PatientRepository()
 
     def get_patients(self,*args,**kwargs):
-        unfiltered_patients = self.db.get_patients(user=self.request.user)
+        unfiltered_patients = self.db.get_patients(clinic_id=self.request.user)
         filtered_patients = PatientFilter(
             data=self.request.query_params,
             queryset=unfiltered_patients,
@@ -50,7 +50,7 @@ class PatientService(BaseService):
         )
 
     def get_patient(self,*args,**kwargs):
-        patient = self.db.get_patient(user_id=kwargs.get('pk'),user=self.request.user)
+        patient = self.db.get_patient(user_id=kwargs.get('pk'),clinic_id=self.request.user)
         return self.get_response(
             patient,
             PatientDetailSerializer,
@@ -58,7 +58,7 @@ class PatientService(BaseService):
         )
 
     def update_patient(self, *args, **kwargs):
-        patient = self.db.get_patient(user_id=kwargs.get('pk'))
+        patient = self.db.get_patient(user_id=kwargs.get('pk'),clinic_id=self.request.user)
         serializer_class = PatientCreateUpdateSerializer(
             instance=patient,
             data=self.request.data,

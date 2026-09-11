@@ -14,7 +14,7 @@ class AppointmentService(BaseService):
         self.db = AppointmentRepository()
 
     def get_appointments(self,*args,**kwargs):
-        unfiltered_appointments = self.db.get_appointments(user=self.request.user)
+        unfiltered_appointments = self.db.get_appointments(clinic_id=self.request.user)
         filtered_appointments = AppointmentFilter(
             data=self.request.query_params,
             queryset=unfiltered_appointments,
@@ -42,7 +42,7 @@ class AppointmentService(BaseService):
         )
 
     def update_appointment(self,*args,**kwargs):
-        appointment = self.db.get_appointment(appointment_id=kwargs.get('pk'))
+        appointment = self.db.get_appointment(appointment_id=kwargs.get('pk'),clinic_id=self.request.user)
         serializer_class = AppointmentCreateUpdateSerializer(
             instance=appointment,
             data=self.request.data,
@@ -58,7 +58,7 @@ class AppointmentService(BaseService):
         )
 
     def delete_appointment(self,*args,**kwargs):
-        appointment = self.db.get_appointment(appointment_id=kwargs.get('pk'))
+        appointment = self.db.get_appointment(appointment_id=kwargs.get('pk'),clinic_id=self.request.user)
         appointment.delete()
         return self.get_response_object(
             context={'request': self.request},

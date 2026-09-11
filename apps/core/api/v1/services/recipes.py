@@ -26,7 +26,7 @@ class RecipeService(BaseService):
         )
 
     def get_recipes(self,*args,**kwargs):
-        recipes = self.db.get_recipes(user=self.request.user)
+        recipes = self.db.get_recipes(clinic_id=self.request.user)
         return self.get_response(
             recipes,
             RecipeListSerializer,
@@ -35,7 +35,7 @@ class RecipeService(BaseService):
         )
 
     def delete_recipe(self,*args,**kwargs):
-        recipe = self.db.get_recipe(recipe_id=kwargs.get('pk'))
+        recipe = self.db.get_recipe(recipe_id=kwargs.get('pk'),clinic_id=self.request.user)
         recipe.delete()
         return self.get_response_object(
             context={'request': self.request},

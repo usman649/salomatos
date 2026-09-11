@@ -31,7 +31,7 @@ class TreatmentService(BaseService):
         )
 
     def get_treatments(self,*args,**kwargs):
-        unfiltered_treatment = self.db.get_treatments(user=self.request.user)
+        unfiltered_treatment = self.db.get_treatments(clinic_id=self.request.user)
 
         filtered_treatment = TreatmentFilter(
             data=self.request.query_params,
@@ -46,7 +46,7 @@ class TreatmentService(BaseService):
         )
 
     def delete_treatment(self,*args,**kwargs):
-        treatment = self.db.get_treatment(treatment_id=kwargs.get('pk'))
+        treatment = self.db.get_treatment(treatment_id=kwargs.get('pk'),clinic_id=self.request.user)
         treatment.delete()
         return self.get_response_object(
             context={'request': self.request},
@@ -54,7 +54,7 @@ class TreatmentService(BaseService):
         )
 
     def update_treatment(self, *args, **kwargs):
-        treatment = self.db.get_treatment(treatment_id=kwargs.get('pk'))
+        treatment = self.db.get_treatment(treatment_id=kwargs.get('pk'),clinic_id=self.request.user)
         serializer_class = TreatmentCreateUpdateSerializer(
             instance=treatment,
             data=self.request.data,
@@ -71,7 +71,7 @@ class TreatmentService(BaseService):
 
 
     def get_treatment_types(self,*args,**kwargs):
-        unfiltered_treatment_types = self.db.get_treatment_types(user=self.request.user)
+        unfiltered_treatment_types = self.db.get_treatment_types(clinic_id=self.request.user)
 
         filtered_treatment_types = TreatmentTypeFilter(
             data=self.request.query_params,
@@ -100,7 +100,7 @@ class TreatmentService(BaseService):
         )
 
     def update_treatment_type(self, *args, **kwargs):
-        treatment_type= self.db.get_treatment_type(treatment_type_id=kwargs.get('pk'))
+        treatment_type= self.db.get_treatment_type(treatment_type_id=kwargs.get('pk'),clinic_id=self.request.user)
         serializer_class = TreatmentTypeCreateUpdateSerializer(
             instance=treatment_type,
             data=self.request.data,
@@ -116,7 +116,7 @@ class TreatmentService(BaseService):
         )
 
     def delete_treatment_type(self, *args, **kwargs):
-        treatment_type = self.db.get_treatment_type(treatment_type_id=kwargs.get('pk'))
+        treatment_type = self.db.get_treatment_type(treatment_type_id=kwargs.get('pk'),clinic_id=self.request.user)
         treatment_type.delete()
         return self.get_response_object(
             context={'request': self.request},

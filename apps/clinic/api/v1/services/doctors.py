@@ -19,7 +19,7 @@ class DoctorService(BaseService):
         self.db = DoctorRepository()
 
     def get_doctors(self,*args,**kwargs):
-        doctors = self.db.get_doctors(user=self.request.user)
+        doctors = self.db.get_doctors(clinic_id=self.request.user)
         return self.get_response(
             doctors,
             DoctorListSerializer,
@@ -45,7 +45,7 @@ class DoctorService(BaseService):
         )
 
     def update_doctor(self,*args,**kwargs):
-        doctor = self.db.get_doctor(user_id=kwargs.get('pk'))
+        doctor = self.db.get_doctor(user_id=kwargs.get('pk'),clinic_id=self.request.user)
         serializer_class = DoctorCreateUpdateSerializer(
             instance=doctor,
             data=self.request.data,
@@ -61,7 +61,7 @@ class DoctorService(BaseService):
         )
 
     def delete_doctor(self,*args,**kwargs):
-        doctor = self.db.get_doctor(user_id=kwargs.get('pk'))
+        doctor = self.db.get_doctor(user_id=kwargs.get('pk'),clinic_id=self.request.user)
         doctor.delete()
         return self.get_response_object(
             context={'request': self.request},
@@ -72,7 +72,7 @@ class DoctorService(BaseService):
 
 
     def get_doctor_types(self,*args,**kwargs):
-        doctor_types = self.db.get_doctor_types(user=self.request.user)
+        doctor_types = self.db.get_doctor_types(clinic_id=self.request.user)
         return self.get_response(
             doctor_types,
             DoctorTypeListSerializer,
@@ -97,7 +97,7 @@ class DoctorService(BaseService):
         )
 
     def update_doctor_type(self,*args,**kwargs):
-        doctor_type = self.db.get_doctor_type(doctor_type_id=kwargs.get('pk'))
+        doctor_type = self.db.get_doctor_type(doctor_type_id=kwargs.get('pk'),clinic_id=self.request.user)
         serializer_class = DoctorTypeCreateUpdateSerializer(
             instance=doctor_type,
             data=self.request.data,
@@ -113,7 +113,7 @@ class DoctorService(BaseService):
         )
 
     def delete_doctor_type(self,*args,**kwargs):
-        doctor_type = self.db.get_doctor_type(doctor_type_id=kwargs.get('pk'))
+        doctor_type = self.db.get_doctor_type(doctor_type_id=kwargs.get('pk'),clinic_id=self.request.user)
         doctor_type.delete()
         return self.get_response_object(
             context={'request': self.request},
