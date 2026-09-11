@@ -15,6 +15,7 @@ class DoctorCreateUpdateSerializer(serializers.ModelSerializer):
             'full_name',
             'phone_number',
             'email',
+            'doctor_type'
         ]
 
 
