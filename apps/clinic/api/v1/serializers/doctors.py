@@ -6,6 +6,8 @@ class DoctorListSerializer(serializers.Serializer):
     full_name = serializers.CharField()
     phone_number = serializers.CharField()
     email = serializers.EmailField()
+    doctor_type = serializers.CharField()
+
 
 
 class DoctorCreateUpdateSerializer(serializers.ModelSerializer):
