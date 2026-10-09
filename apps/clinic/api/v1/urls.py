@@ -54,8 +54,13 @@ urlpatterns = [
     ),
     path(
         'galleries/',
-        views.GalleryCreateView.as_view(),
+        views.GalleryCreateListView.as_view(),
         name='gallery-create',
+    ),
+    path(
+        'galleries/<int:pk>/',
+        views.GalleryDetailUpdateDeleteView.as_view(),
+        name='gallery-detail-update',
     ),
     path(
         '',

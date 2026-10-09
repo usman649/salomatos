@@ -23,6 +23,41 @@ class GalleryService(BaseService):
             context={'request': self.request}
         )
 
+    def get_galleries(self, *args, **kwargs):
+        gallery = self.db.get_galleries(clinic_id=self.request.user)
+        return self.get_response(
+            gallery,
+            GalleryListSerializer,
+            context={'request': self.request},
+            many=True
+        )
+
+    def update_gallery(self, *args, **kwargs):
+        gallery = self.db.get_gallery(gallery_id=kwargs.get('pk'), clinic_id=self.request.user)
+        serializer_class = GalleryCreateUpdateSerializer(
+            instance=gallery,
+            data=self.request.data,
+            partial=True,
+            context={'request': self.request}
+        )
+        serializer_class.is_valid(raise_exception=True)
+        serializer_class.save()
+        return self.get_response_object(
+            obj=gallery,
+            response_serializer_class=GalleryListSerializer,
+            context={'request': self.request}
+        )
+
+    def delete_gallery(self, *args, **kwargs):
+        gallery = self.db.get_gallery(gallery_id=kwargs.get('pk'), clinic_id=self.request.user)
+        gallery.delete()
+        return self.get_response_object(
+            context={'request': self.request},
+            status_code=status.HTTP_204_NO_CONTENT,
+        )
+
+
+
 
 
 

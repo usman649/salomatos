@@ -12,6 +12,7 @@ class GalleryCreateUpdateSerializer(serializers.ModelSerializer):
         model = Gallery
         fields = [
             'id',
+            'clinic',
             'user',
             'image',
         ]
