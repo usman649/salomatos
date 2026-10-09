@@ -2,7 +2,6 @@ from rest_framework import serializers
 from apps.clinic.models import Treatment, TreatmentType
 from django.db import transaction
 
-
 class TreatmentListSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     patient = serializers.CharField()
@@ -22,6 +21,7 @@ class TreatmentListSerializer(serializers.Serializer):
         return obj.total_treatment_cost - obj.total_paid
 
 class TreatmentBulkCreateListSerializer(serializers.ListSerializer):
+    @transaction.atomic
     def create(self, validated_data):
         treatments = [Treatment(**item) for item in validated_data]
         return Treatment.objects.bulk_create(treatments)
