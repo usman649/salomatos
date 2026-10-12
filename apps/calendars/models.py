@@ -38,7 +38,7 @@ class Appointment(CreatedUpdatedAbstractModel):
     is_reminded = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.patient.full_name} - {self.doctor.full_name} ({self.date})"
+        return self.patient
 
 
 
