@@ -17,12 +17,18 @@ class AppointmentCreateListView(APIView):
         operation_description='Appointments List',
         manual_parameters=[
             openapi.Parameter(
-                name='date',
+                name='week_day',
                 in_=openapi.IN_QUERY,
                 type=openapi.TYPE_STRING,
                 description='Appointment by day and week',
                 enum = ['day','week']
             ),
+            openapi.Parameter(
+                name = 'date',
+                in_ = openapi.IN_QUERY,
+                type = openapi.TYPE_STRING,
+                description='Appointment by day and month and year (YYYY-MM-DD)',
+            )
 
         ]
     )

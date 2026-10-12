@@ -5,7 +5,8 @@ from datetime import timedelta
 from apps.calendars.models import Appointment
 
 class AppointmentFilter(django_filters.FilterSet):
-    date = django_filters.CharFilter(method='filter_by_week_day')
+    week_day = django_filters.CharFilter(method='filter_by_week_day')
+    date = django_filters.DateFilter(field_name='date')
 
     class Meta:
         model = Appointment
