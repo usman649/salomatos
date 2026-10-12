@@ -20,7 +20,9 @@ class Appointment(CreatedUpdatedAbstractModel):
         User,
         on_delete=models.CASCADE,
         related_name='patient_appointments',
-        limit_choices_to={'role':User.Roles.PATIENT}
+        limit_choices_to={'role':User.Roles.PATIENT},
+        blank=True,
+        null=True,
     )
     doctor = models.ForeignKey(
         User,
