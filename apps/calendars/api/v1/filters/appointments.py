@@ -7,6 +7,7 @@ from apps.calendars.models import Appointment
 class AppointmentFilter(django_filters.FilterSet):
     week_day = django_filters.CharFilter(method='filter_by_week_day')
     date = django_filters.DateFilter(field_name='date')
+    doctor_id = django_filters.CharFilter(field_name='doctor_id')
 
     class Meta:
         model = Appointment

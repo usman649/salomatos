@@ -28,6 +28,13 @@ class AppointmentCreateListView(APIView):
                 in_ = openapi.IN_QUERY,
                 type = openapi.TYPE_STRING,
                 description='Appointment by day and month and year (YYYY-MM-DD)',
+            ),
+            openapi.Parameter(
+                name = 'doctor_id',
+                in_ = openapi.IN_QUERY,
+                type = openapi.TYPE_INTEGER,
+                description='Appointment by doctor ID',
+
             )
 
         ]
