@@ -33,6 +33,25 @@ class TreatmentCreateListView(APIView):
                 in_=openapi.IN_QUERY,
                 type=openapi.TYPE_INTEGER,
                 description='Patient ID',
+            ),
+            openapi.Parameter(
+                name='doctor_id',
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                description='Doctor ID',
+            ),
+            openapi.Parameter(
+                name='treatment_type_id',
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                description='Treatment Type ID',
+            ),
+            openapi.Parameter(
+                name = 'remaining',
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_BOOLEAN,
+                description='Remaining',
+
             )
         ],
     )
