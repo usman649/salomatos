@@ -3,7 +3,7 @@ from apps.authentication.models import User
 
 class PatientRepository:
     def get_patients(self,clinic_id):
-        patients = User.objects.filter(role=User.Roles.PATIENT,clinic=clinic_id)
+        patients = User.objects.filter(role=User.Roles.PATIENT,clinic=clinic_id,is_origin=True)
         return patients
 
 

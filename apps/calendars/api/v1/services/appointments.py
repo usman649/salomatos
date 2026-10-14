@@ -34,6 +34,7 @@ class AppointmentService(BaseService):
         serializer_class.is_valid(raise_exception=True)
         appointment = serializer_class.save(
             clinic = self.request.user,
+
         )
         return self.get_response_object(
             appointment,

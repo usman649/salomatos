@@ -49,9 +49,11 @@ class AppointmentCreateUpdateSerializer(serializers.ModelSerializer):
         if full_name and phone_number:
             patient, _ = User.objects.get_or_create(
                 phone_number=phone_number,
+                clinic=validated_data['clinic'],
                 defaults={
                     'full_name': full_name,
-                    'role': User.Roles.PATIENT
+                    'role': User.Roles.PATIENT,
+                    'is_origin': False,
                 }
             )
             validated_data['patient'] = patient

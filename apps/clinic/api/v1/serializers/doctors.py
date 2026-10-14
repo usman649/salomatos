@@ -27,17 +27,12 @@ class DoctorTypeListSerializer(serializers.Serializer):
 
 
 class DoctorTypeCreateUpdateSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(default='Stomatolog',required=False,allow_null=True)
     class Meta:
         model = DoctorType
         fields = [
             'name',
         ]
 
-    def validate_name(self, value):
-        if value is None:
-            return 'Stomatolog'
-        return value
 
 
 
