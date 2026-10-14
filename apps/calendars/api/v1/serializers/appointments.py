@@ -15,22 +15,10 @@ class AppointmentListSerializer(serializers.Serializer):
     notes = serializers.CharField(read_only=True)
     status = serializers.CharField(read_only=True)
 
-    treatment_type = serializers.SerializerMethodField()
-    tooth_number = serializers.SerializerMethodField()
+    treatment_type = serializers.CharField(read_only=True)
+    tooth_number = serializers.IntegerField(read_only=True)
 
-    def get_treatment_type(self, obj):
-        if obj.patient:
-            treatment = obj.patient.patient_treatments.first()
-            if treatment and treatment.treatment_type:
-                return treatment.treatment_type.name
-        return None
 
-    def get_tooth_number(self, obj):
-        if obj.patient:
-            treatment = obj.patient.patient_treatments.first()
-            if treatment and treatment.tooth_number:
-                return treatment.tooth_number
-        return None
 
 class AppointmentCreateUpdateSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(write_only=True, required=False,allow_null=True)
@@ -47,6 +35,8 @@ class AppointmentCreateUpdateSerializer(serializers.ModelSerializer):
             'time',
             'notes',
             'status',
+            'treatment_type',
+            'tooth_number',
         ]
         extra_kwargs = {
             'patient': {'required': False, 'allow_null': True}

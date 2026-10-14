@@ -36,6 +36,10 @@ class Appointment(CreatedUpdatedAbstractModel):
     status = models.CharField(choices=Status.choices,max_length=20,default=Status.IN_PROGRESS)
 
     is_reminded = models.BooleanField(default=False)
+    treatment_type = models.CharField(max_length=255,blank=True,null=True)
+    tooth_number = models.PositiveIntegerField(blank = True, null = True)
+
+
 
 
 
