@@ -73,7 +73,7 @@ class PatientCreateUpdateSerializer(serializers.ModelSerializer):
             'birth_date',
             'address',
             'office',
-            'is_origin',
+
 
         ]
 
