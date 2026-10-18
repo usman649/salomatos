@@ -71,13 +71,7 @@ class User(CreatedUpdatedAbstractModel,AbstractBaseUser,PermissionsMixin):
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['phone_number', 'clinic'],
-                name='unique_phone_per_clinic'
-            )
-        ]
+
 
     def __str__(self):
         return self.full_name
