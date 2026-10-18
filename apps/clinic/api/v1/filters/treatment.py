@@ -1,6 +1,7 @@
 import django_filters
 from apps.clinic.models import Treatment,TreatmentType
 from django.db.models import F
+
 class TreatmentFilter(django_filters.FilterSet):
     patient_id = django_filters.NumberFilter(
         field_name='patient',
@@ -12,10 +13,13 @@ class TreatmentFilter(django_filters.FilterSet):
         field_name='treatment_type',
     )
     remaining = django_filters.BooleanFilter(method='filter_remaining')
+    status = django_filters.CharFilter(
+        field_name='status',
+    )
 
     class Meta:
         model = Treatment
-        fields = ['patient_id', 'doctor_id','treatment_type_id']
+        fields = ['patient_id', 'doctor_id','treatment_type_id','status']
 
     def filter_remaining(self, queryset, name, value):
         if value is True:

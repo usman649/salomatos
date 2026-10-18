@@ -52,6 +52,13 @@ class TreatmentCreateListView(APIView):
                 type=openapi.TYPE_BOOLEAN,
                 description='Remaining',
 
+            ),
+            openapi.Parameter(
+                name = 'status',
+                in_=openapi.IN_QUERY,
+                type = openapi.TYPE_STRING,
+                enum = ['in_progress','completed'],
+                description='Status',
             )
         ],
     )
