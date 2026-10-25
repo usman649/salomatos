@@ -71,7 +71,17 @@ urlpatterns = [
         '<int:pk>/',
         views.ClinicDetailUpdateDeleteView.as_view(),
         name = 'clinic-detail-update-delete',
-    )
+    ),
+    path(
+        'admins/',
+        views.AdminCreateListView.as_view(),
+        name='admins-create-list',
+    ),
+    path(
+        'admins/<int:pk>/',
+        views.AdminDetailUpdateDeleteView.as_view(),
+        name='admin-detail-update-delete',
+    ),
 
 
 ]
