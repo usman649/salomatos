@@ -137,14 +137,35 @@ class PaymentTests(TestCase):
         other_owner = client_for(make_clinic())
         self.assertEqual(other_owner.get(URL).data["count"], 0)
 
-    def test_only_the_owner_records_and_reads_payments(self):
-        for user in (make_admin(self.clinic), self.doctor, self.patient):
-            client = client_for(user)
-            self.assertEqual(self.pay(client=client).status_code, 403, user.role)
-            self.assertEqual(client.get(URL).status_code, 403, user.role)
+    def test_an_admin_takes_payment_but_cannot_read_the_journal(self):
+        admin = client_for(make_admin(self.clinic))
+
+        response = self.pay(client=admin)
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(admin.get(URL).status_code, 403)
+        payment_id = response.data["id"]
+        voided = admin.post(f"{URL}{payment_id}/void/", {"reason": "Mistake"}, format="json")
+        self.assertEqual(voided.status_code, 403)
+
+    def test_a_doctor_takes_payment_for_their_own_treatments_only(self):
+        colleague = make_doctor(self.clinic)
+        theirs = make_treatment(self.clinic, self.patient, colleague, cost=500_000)
+        doctor = client_for(self.doctor)
+
+        self.assertEqual(self.pay(client=doctor).status_code, 201)
+        foreign = self.pay(client=doctor, treatment=theirs.id)
+        self.assertEqual(foreign.status_code, 400)
+        self.assertEqual(foreign.data["errors"]["treatment"], "does_not_exist")
+        self.assertEqual(doctor.get(URL).status_code, 403)
+        theirs.refresh_from_db()
+        self.assertEqual(theirs.total_paid, 0)
+
+    def test_a_patient_cannot_record_or_read_payments(self):
+        client = client_for(self.patient)
+        self.assertEqual(self.pay(client=client).status_code, 403)
+        self.assertEqual(client.get(URL).status_code, 403)
         self.assertEqual(Payment.objects.count(), 0)
-        self.treatment.refresh_from_db()
-        self.assertEqual(self.treatment.total_paid, 200_000)
 
     def test_unauthenticated_is_refused(self):
         from rest_framework.test import APIClient

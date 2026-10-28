@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.authentication.models import User
 from apps.clinic.models import Treatment
 from apps.finance.api.v1.serializers.common import (
     NOTE_MAX,
@@ -41,9 +42,13 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        clinic = self.context.get("clinic")
-        # Another clinic's treatment reads as "does not exist", never as "forbidden".
-        self.fields["treatment"].queryset = Treatment.objects.filter(clinic=clinic)
+        treatments = Treatment.objects.filter(clinic=self.context.get("clinic"))
+        request = self.context.get("request")
+        if request is not None and request.user.role == User.Roles.DOCTOR:
+            treatments = treatments.filter(doctor=request.user)
+        # A treatment the user may not take money for reads as "does not exist",
+        # never as "forbidden", so its existence is not revealed.
+        self.fields["treatment"].queryset = treatments
 
     def validate_note(self, value):
         return blank_to_none(value)
