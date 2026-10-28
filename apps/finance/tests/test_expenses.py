@@ -278,6 +278,29 @@ class RecurringExpenseTests(TestCase):
         self.assertEqual(len(self.due(self.this_month).data["items"]), 1)
         self.assertEqual(self.due(shift_month(self.this_month, 1)).data["items"], [])
 
+    def test_months_before_the_bill_existed_are_refused(self):
+        rent = self.create().data["id"]
+        last_month = shift_month(self.this_month, -1)
+
+        paid = self.pay(rent, last_month)
+        self.assertEqual(paid.status_code, 400)
+        self.assertEqual(paid.data["message_key"], "before_bill_start")
+        skipped = self.owner.post(
+            f"{RECURRING_URL}{rent}/skip/", {"month": format_month(last_month)}, format="json"
+        )
+        self.assertEqual(skipped.status_code, 400)
+
+    def test_a_bill_payment_keeps_the_bill_category(self):
+        rent = self.create().data["id"]
+        expense_id = self.pay(rent, self.this_month).data["id"]
+
+        moved = self.owner.patch(f"{URL}{expense_id}/", {"category": "utilities"}, format="json")
+        self.assertEqual(moved.status_code, 400)
+        self.assertEqual(moved.data["errors"]["category"], "recurring_category")
+        self.assertEqual(
+            self.owner.patch(f"{URL}{expense_id}/", {"amount": 8_200_000}, format="json").status_code, 200
+        )
+
     def test_month_is_required_and_validated(self):
         self.assertEqual(self.owner.get(f"{RECURRING_URL}due/").status_code, 400)
         self.assertEqual(self.owner.get(f"{RECURRING_URL}due/", {"month": "2026-13"}).status_code, 400)

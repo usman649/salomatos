@@ -52,3 +52,11 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     def validate_note(self, value):
         return blank_to_none(value)
+
+    def validate(self, attrs):
+        if attrs["date"] < attrs["treatment"].start_date:
+            raise serializers.ValidationError(
+                {"date": "A payment cannot be dated before its treatment started."},
+                code="before_treatment_start",
+            )
+        return attrs

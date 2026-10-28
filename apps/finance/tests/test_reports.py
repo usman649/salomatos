@@ -5,7 +5,7 @@ from django.test import SimpleTestCase, TestCase
 from django.utils.datastructures import MultiValueDict
 
 from apps.core.exceptions import ValidationError
-from apps.core.reporting import ReportRange, parse_range
+from apps.core.reporting import ReportRange, clinic_today, format_month, parse_range, shift_month
 from apps.finance.models import DoctorCompensation, Expense, Payment
 from apps.finance.tests.factories import (
     client_for,
@@ -154,6 +154,22 @@ class FinanceOverviewTests(TestCase):
         self.assertEqual(response.data["totals"]["outstanding_debt"], 300_000)
         self.assertEqual(response.data["totals"]["collected"], 0)
 
+    def test_a_patients_treatments_are_netted(self):
+        owed = make_treatment(self.clinic, self.alice, self.doctor, cost=500_000, start_date=date(2026, 2, 1))
+        make_treatment(
+            self.clinic, self.alice, self.doctor, cost=300_000, paid=400_000, start_date=date(2026, 2, 2)
+        )
+        make_treatment(self.clinic, self.bob, self.doctor, cost=100_000, start_date=date(2026, 2, 3))
+        owed.patient = None
+        owed.save(update_fields=["patient"])
+        make_treatment(self.clinic, self.alice, self.doctor, cost=200_000, start_date=date(2026, 2, 4))
+
+        totals = self.overview().data["totals"]
+
+        # Alice: 200 000 owed less 100 000 overpaid; Bob 100 000; the orphan 500 000.
+        self.assertEqual(totals["outstanding_debt"], 700_000)
+        self.assertEqual(totals["debtors_count"], 2)
+
     def test_voided_payments_are_left_out(self):
         treatment = make_treatment(self.clinic, self.alice, self.doctor, cost=1_000_000, start_date=date(2026, 3, 1))
         pay(treatment, 300_000, date(2026, 3, 2))
@@ -287,39 +303,59 @@ class PayrollTests(TestCase):
 
     def test_compensation_history_and_create(self):
         url = f"/api/v1/finance/doctors/{self.doctor.id}/compensation/"
+        this_month = clinic_today().replace(day=1)
+        now, later = format_month(this_month), format_month(shift_month(this_month, 2))
         created = self.owner.post(
             url,
-            {"percent": 32.5, "fixed": 0, "base": "collected", "deduct_lab": True, "effective_from": "2026-04"},
+            {"percent": 32.5, "fixed": 0, "base": "collected", "deduct_lab": True, "effective_from": now},
             format="json",
         )
         self.assertEqual(created.status_code, 201, created.data)
         self.assertEqual(created.data["percent"], 32.5)
         self.owner.post(
             url,
-            {"percent": 0, "fixed": 3_000_000, "base": "collected", "deduct_lab": True, "effective_from": "2026-06"},
+            {"percent": 0, "fixed": 3_000_000, "base": "collected", "deduct_lab": True, "effective_from": later},
             format="json",
         )
 
         history = self.owner.get(url)
-        self.assertEqual([entry["effective_from"] for entry in history.data], ["2026-06", "2026-04"])
+        self.assertEqual([entry["effective_from"] for entry in history.data], [later, now])
 
         neither = self.owner.post(
             url,
-            {"percent": 0, "fixed": 0, "base": "collected", "deduct_lab": True, "effective_from": "2026-06"},
+            {"percent": 0, "fixed": 0, "base": "collected", "deduct_lab": True, "effective_from": later},
             format="json",
         )
         self.assertEqual(neither.status_code, 400)
         over = self.owner.post(
             url,
-            {"percent": 101, "fixed": 0, "base": "collected", "deduct_lab": True, "effective_from": "2026-06"},
+            {"percent": 101, "fixed": 0, "base": "collected", "deduct_lab": True, "effective_from": later},
             format="json",
         )
         self.assertEqual(over.status_code, 400)
+
+    def test_terms_cannot_rewrite_past_months(self):
+        url = f"/api/v1/finance/doctors/{self.doctor.id}/compensation/"
+        last_month = format_month(shift_month(clinic_today().replace(day=1), -1))
+        response = self.owner.post(
+            url,
+            {"percent": 30, "base": "collected", "deduct_lab": False, "effective_from": last_month},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["errors"]["effective_from"], "past_month")
 
     def test_compensation_of_another_clinics_doctor_is_not_found(self):
         foreign = make_doctor(make_clinic())
         response = self.owner.get(f"/api/v1/finance/doctors/{foreign.id}/compensation/")
         self.assertEqual(response.status_code, 404)
+
+    def test_payroll_looks_at_most_a_year_ahead(self):
+        this_month = clinic_today().replace(day=1)
+        self.payroll(format_month(shift_month(this_month, 12)))
+        response = self.owner.get(PAYROLL_URL, {"month": format_month(shift_month(this_month, 13))})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["errors"]["month"], "too_far")
 
     def test_only_the_owner_sees_payroll(self):
         for user in (make_admin(self.clinic), self.doctor):

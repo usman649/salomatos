@@ -43,6 +43,17 @@ def _already_paid():
     )
 
 
+def _check_bill_month(recurring, month):
+    # Months before the bill was set up are not in its due list, so a payment
+    # or skip there could never be seen again.
+    if month < recurring.since:
+        raise ValidationError(
+            message="The bill did not exist in that month yet.",
+            message_key="before_bill_start",
+            errors={"month": "before_start"},
+        )
+
+
 def _expense_totals(expenses):
     totals = {"total": 0, "count": 0, PAYROLL: 0, FIXED: 0, VARIABLE: 0}
     for category, amount, count in expenses:
@@ -267,6 +278,7 @@ class ExpenseService(BaseService):
         serializer_class.is_valid(raise_exception=True)
         data = serializer_class.validated_data
         month = data["month"]
+        _check_bill_month(recurring, month)
 
         if self.db.get_active_due_payment(recurring.id, month) is not None:
             raise _already_paid()
@@ -305,6 +317,7 @@ class ExpenseService(BaseService):
         serializer_class = SkipDueSerializer(data=self.request.data)
         serializer_class.is_valid(raise_exception=True)
         month = serializer_class.validated_data["month"]
+        _check_bill_month(recurring, month)
 
         if self.db.get_active_due_payment(recurring.id, month) is not None:
             raise _already_paid()

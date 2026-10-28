@@ -91,12 +91,14 @@ class FinanceReportRepository:
             for row in rows
         ]
 
-    def treatment_debts(self, clinic_id, as_of, started_from=None):
+    def patient_debts(self, clinic_id, as_of, started_from=None):
         """
-        What each treatment was still owed at the end of `as_of`, positive
-        debts only. `total_paid` is today's figure, so payments made after
-        `as_of` are added back; amounts paid before the ledger existed have no
-        date and count as paid from the start.
+        What was still owed at the end of `as_of`, as `[{"patient_id", "debt"}]`
+        with positive debts only. A patient's treatments are netted, so an
+        overpaid one offsets another's debt; a treatment whose patient was
+        deleted stands on its own under `patient_id=None`. `total_paid` is
+        today's figure, so payments made after `as_of` are added back; amounts
+        paid before the ledger existed have no date and count as paid from the start.
         """
         paid_later = (
             Payment.objects.active()
@@ -115,8 +117,19 @@ class FinanceReportRepository:
                 + Coalesce(Subquery(paid_later), Value(0), output_field=BigIntegerField()),
                 output_field=BigIntegerField(),
             )
-        ).filter(debt__gt=0)
-        return list(queryset.values("id", "patient_id", "debt"))
+        )
+        by_patient = (
+            queryset.filter(patient__isnull=False)
+            .values("patient_id")
+            .annotate(total=Sum("debt"))
+            .filter(total__gt=0)
+            .order_by()
+        )
+        orphans = queryset.filter(patient__isnull=True, debt__gt=0).values_list("debt", flat=True)
+        return [
+            *({"patient_id": row["patient_id"], "debt": row["total"]} for row in by_patient),
+            *({"patient_id": None, "debt": debt} for debt in orphans),
+        ]
 
     def last_payment_dates(self, clinic_id, patient_ids, as_of):
         rows = (

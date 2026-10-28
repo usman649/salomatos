@@ -1,8 +1,9 @@
-from datetime import date, time
+from datetime import date, time, timedelta
 from django.test import TestCase
 
 from apps.calendars.models import Appointment
 from apps.clinic.models import Treatment
+from apps.core.reporting import clinic_today
 from apps.finance.tests.factories import (
     client_for,
     make_admin,
@@ -59,10 +60,78 @@ class CompletedDateTests(TestCase):
         treatment.refresh_from_db()
         self.assertIsNone(treatment.completed_date)
 
+    def test_completing_without_a_date_takes_today(self):
+        self.create()
+        treatment = Treatment.objects.get()
+        self.owner.patch(f"{TREATMENTS_URL}{treatment.id}/", {"status": "completed"}, format="json")
+        treatment.refresh_from_db()
+        self.assertEqual(treatment.completed_date, clinic_today())
+
+    def test_editing_a_completed_treatment_keeps_its_date(self):
+        self.create(status="completed", completed_date="2026-03-09")
+        treatment = Treatment.objects.get()
+        self.owner.patch(f"{TREATMENTS_URL}{treatment.id}/", {"notes": "Checked"}, format="json")
+        treatment.refresh_from_db()
+        self.assertEqual(treatment.completed_date, date(2026, 3, 9))
+
+    def test_a_future_completion_is_refused(self):
+        future = (clinic_today() + timedelta(days=1)).isoformat()
+        response = self.create(status="completed", completed_date=future)
+        self.assertEqual(response.status_code, 400)
+
+    def test_a_treatment_booked_ahead_may_complete_on_its_start(self):
+        start = (clinic_today() + timedelta(days=3)).isoformat()
+        response = self.create(start_date=start, status="completed", completed_date=start)
+        self.assertEqual(response.status_code, 200, response.data)
+
     def test_completion_before_the_start_is_refused(self):
         response = self.create(status="completed", completed_date="2026-02-28")
         self.assertEqual(response.status_code, 400)
         self.assertFalse(Treatment.objects.exists())
+
+
+class TreatmentPaidTotalTests(TestCase):
+    """Money reaches a treatment only through finance payments."""
+
+    def setUp(self):
+        self.clinic = make_clinic()
+        self.doctor = make_doctor(self.clinic)
+        self.patient = make_patient(self.clinic)
+        self.owner = client_for(self.clinic)
+
+    def test_a_new_treatment_cannot_start_paid(self):
+        body = {
+            "patient": self.patient.id,
+            "doctor": self.doctor.id,
+            "total_treatment_cost": 100,
+            "visit_number": 1,
+            "start_date": "2026-03-01",
+        }
+        refused = self.owner.post(TREATMENTS_URL, [{**body, "total_paid": 50}], format="json")
+        self.assertEqual(refused.status_code, 400)
+        self.assertFalse(Treatment.objects.exists())
+
+        created = self.owner.post(TREATMENTS_URL, [body], format="json")
+        self.assertEqual(created.status_code, 200, created.data)
+        self.assertEqual(Treatment.objects.get().total_paid, 0)
+
+    def test_an_edit_never_overwrites_what_payments_set(self):
+        treatment = make_treatment(self.clinic, self.patient, self.doctor, cost=1_000, start_date=date(2026, 3, 1))
+        paid = self.owner.post(
+            "/api/v1/finance/payments/",
+            {"treatment": treatment.id, "amount": 400, "method": "cash", "date": "2026-03-02"},
+            format="json",
+        )
+        self.assertEqual(paid.status_code, 201, paid.data)
+
+        response = self.owner.patch(
+            f"{TREATMENTS_URL}{treatment.id}/", {"total_paid": 0, "notes": "Stale form"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        treatment.refresh_from_db()
+        self.assertEqual(treatment.total_paid, 400)
+        self.assertEqual(treatment.notes, "Stale form")
 
 
 class StatisticsOverviewTests(TestCase):

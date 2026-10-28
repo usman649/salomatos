@@ -1,6 +1,7 @@
 from decimal import ROUND_HALF_UP, Decimal
 
 from apps.core.permissions import get_clinic
+from apps.core.exceptions import ValidationError
 from apps.core.reporting import (
     clinic_today,
     month_end,
@@ -18,6 +19,9 @@ from apps.finance.api.v1.serializers.reports import (
 from apps.finance.models import DoctorCompensation, ExpenseCategory, Payment
 
 TOP_DEBTORS = 10
+
+# Payroll looks at most a year ahead; further out there is nothing to plan.
+PAYROLL_MONTHS_AHEAD = 12
 
 # Nobody hands out the last 437 so'm of a percent.
 ACCRUAL_STEP = Decimal(1000)
@@ -53,8 +57,8 @@ class FinanceReportService(BaseService):
     # Overview
 
     def _totals(self, report_range):
-        debts = self.db.treatment_debts(self.clinic, as_of=report_range.end)
-        new_debts = self.db.treatment_debts(
+        debts = self.db.patient_debts(self.clinic, as_of=report_range.end)
+        new_debts = self.db.patient_debts(
             self.clinic, as_of=report_range.end, started_from=report_range.start
         )
         return {
@@ -66,11 +70,8 @@ class FinanceReportService(BaseService):
         }, debts
 
     def _top_debtors(self, debts, as_of):
-        by_patient = {}
-        for row in debts:
-            if row["patient_id"] is not None:
-                by_patient[row["patient_id"]] = by_patient.get(row["patient_id"], 0) + row["debt"]
-        top = sorted(by_patient.items(), key=lambda item: (-item[1], item[0]))[:TOP_DEBTORS]
+        by_patient = [(row["patient_id"], row["debt"]) for row in debts if row["patient_id"] is not None]
+        top = sorted(by_patient, key=lambda item: (-item[1], item[0]))[:TOP_DEBTORS]
         ids = [patient_id for patient_id, _debt in top]
         patients = self.db.get_patients(self.clinic, ids)
         last_payments = self.db.last_payment_dates(self.clinic, ids, as_of)
@@ -137,6 +138,16 @@ class FinanceReportService(BaseService):
         return self.get_response_object(overview, FinanceOverviewSerializer)
 
     # Doctor pay
+
+    def _payroll_month(self):
+        month = require_month(self.request.query_params)
+        if month > shift_month(clinic_today().replace(day=1), PAYROLL_MONTHS_AHEAD):
+            raise ValidationError(
+                message=f"Payroll covers at most {PAYROLL_MONTHS_AHEAD} months ahead.",
+                message_key="invalid_month",
+                errors={"month": "too_far"},
+            )
+        return month
 
     def _payroll_rows(self, month, doctor_id=None):
         doctors = self.db.get_doctors(self.clinic, doctor_id=doctor_id)
@@ -207,7 +218,7 @@ class FinanceReportService(BaseService):
         return rows
 
     def get_payroll(self, *args, **kwargs):
-        month = require_month(self.request.query_params)
+        month = self._payroll_month()
         rows = self._payroll_rows(month)
         payroll = {
             "month": month,
@@ -223,7 +234,7 @@ class FinanceReportService(BaseService):
     def get_my_month(self, *args, **kwargs):
         """A doctor's own month: what they earned, were paid and are still owed."""
         if self.request.query_params.get("month"):
-            month = require_month(self.request.query_params)
+            month = self._payroll_month()
         else:
             month = clinic_today().replace(day=1)
         [row] = self._payroll_rows(month, doctor_id=self.request.user.id)

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.authentication.models import User
+from apps.core.reporting import clinic_today
 from apps.finance.api.v1.serializers.common import (
     AMOUNT_MAX,
     NOTE_MAX,
@@ -74,6 +75,13 @@ class ExpenseCreateUpdateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         category = attrs.get("category", getattr(self.instance, "category", None))
         doctor = attrs.get("doctor", getattr(self.instance, "doctor", None))
+        recurring = self.instance is not None and self.instance.recurring_id is not None
+        if recurring and category != self.instance.category:
+            # A bill's payment counts under the bill's category in the due list.
+            raise serializers.ValidationError(
+                {"category": "A recurring bill's payment keeps the bill's category."},
+                code="recurring_category",
+            )
         if category in DOCTOR_REQUIRED_CATEGORIES and doctor is None:
             raise serializers.ValidationError(
                 {"doctor": "A doctor's share needs the doctor."}, code="required"
@@ -214,6 +222,14 @@ class CompensationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoctorCompensation
         fields = ["percent", "fixed", "base", "deduct_lab", "effective_from"]
+
+    def validate_effective_from(self, value):
+        # Past months may already be paid out; new terms must not rewrite them.
+        if value < clinic_today().replace(day=1):
+            raise serializers.ValidationError(
+                "Terms start in the current month or later.", code="past_month"
+            )
+        return value
 
     def validate(self, attrs):
         if attrs["percent"] <= 0 and attrs.get("fixed", 0) <= 0:

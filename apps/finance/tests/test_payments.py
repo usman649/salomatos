@@ -63,6 +63,12 @@ class PaymentTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["errors"]["date"], "future_date")
 
+    def test_payment_before_the_treatment_started_is_refused(self):
+        response = self.pay(date="2026-01-09")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["errors"]["date"], "before_treatment_start")
+
     def test_zero_and_unknown_method_are_refused(self):
         self.assertEqual(self.pay(amount=0).status_code, 400)
         self.assertEqual(self.pay(method="bitcoin").status_code, 400)
