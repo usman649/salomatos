@@ -325,19 +325,6 @@ class Migration(migrations.Migration):
                     models.CharField(blank=True, max_length=200, null=True),
                 ),
                 ("amount", models.PositiveBigIntegerField()),
-                (
-                    "method",
-                    models.CharField(
-                        choices=[
-                            ("cash", "Cash"),
-                            ("card", "Card"),
-                            ("click", "Click"),
-                            ("payme", "Payme"),
-                            ("transfer", "Bank transfer"),
-                        ],
-                        max_length=20,
-                    ),
-                ),
                 ("date", models.DateField()),
                 ("note", models.CharField(blank=True, max_length=500, null=True)),
                 (

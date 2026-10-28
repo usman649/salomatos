@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.clinic.models import Treatment, TreatmentType
+from apps.finance.models import Payment
 from django.db import transaction
 from django.utils import timezone
 
@@ -26,11 +27,28 @@ class TreatmentBulkCreateListSerializer(serializers.ListSerializer):
     @transaction.atomic
     def create(self, validated_data):
         treatments = [Treatment(**item) for item in validated_data]
-        return Treatment.objects.bulk_create(treatments)
+        treatments = Treatment.objects.bulk_create(treatments)
+        # What the patient paid while the treatment was entered is a payment
+        # made today, so the finance reports count it like any other.
+        request = self.context.get('request')
+        Payment.objects.bulk_create(
+            Payment(
+                clinic=treatment.clinic,
+                treatment=treatment,
+                patient=treatment.patient,
+                doctor=treatment.doctor,
+                amount=treatment.total_paid,
+                date=timezone.localdate(),
+                created_by=request.user if request else None,
+            )
+            for treatment in treatments
+            if treatment.total_paid
+        )
+        return treatments
 
 class TreatmentCreateUpdateSerializer(serializers.ModelSerializer):
-    # Money comes in only through finance payments, which keep `total_paid` in
-    # step: a new treatment starts unpaid and an edit never overwrites the sum.
+    # After creation `total_paid` moves only with finance payments: the amount
+    # paid up front becomes the first payment, and an edit never overwrites it.
     total_paid = serializers.IntegerField(min_value=0, default=0)
 
     class Meta:
@@ -50,16 +68,13 @@ class TreatmentCreateUpdateSerializer(serializers.ModelSerializer):
             'status',
         ]
 
-    def validate_total_paid(self, value):
-        if self.instance is None and value:
-            raise serializers.ValidationError(
-                'Record the money as a payment.', code='use_payments'
-            )
-        return value
-
     def validate(self, attrs):
         if self.instance is not None:
             attrs.pop('total_paid', None)
+        elif attrs.get('total_paid', 0) > attrs.get('total_treatment_cost', 0):
+            raise serializers.ValidationError(
+                {'total_paid': 'The amount paid cannot exceed the cost.'}
+            )
         status = attrs.get('status', getattr(self.instance, 'status', None))
         start_date = attrs.get('start_date', getattr(self.instance, 'start_date', None))
         completed_date = attrs.get('completed_date', getattr(self.instance, 'completed_date', None))

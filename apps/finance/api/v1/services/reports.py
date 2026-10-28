@@ -16,7 +16,7 @@ from apps.finance.api.v1.serializers.reports import (
     FinanceOverviewSerializer,
     PayrollSerializer,
 )
-from apps.finance.models import DoctorCompensation, ExpenseCategory, Payment
+from apps.finance.models import DoctorCompensation, ExpenseCategory
 
 TOP_DEBTORS = 10
 
@@ -106,7 +106,6 @@ class FinanceReportService(BaseService):
         for day, amount in collected.items():
             daily.setdefault(day, {})["collected"] = amount
 
-        by_method = self.db.collected_by_method(self.clinic, start, end)
         by_doctor = self.db.collected_by_doctor(self.clinic, start, end)
         doctors = self.db.get_doctors(self.clinic)
 
@@ -117,10 +116,6 @@ class FinanceReportService(BaseService):
             "totals": totals,
             "previous_totals": previous_totals,
             "series": report_range.series(daily, ["billed", "collected"]),
-            "payment_methods": [
-                {"method": method, "amount": by_method.get(method, 0)}
-                for method in Payment.Method.values
-            ],
             "doctors": sorted(
                 (
                     {

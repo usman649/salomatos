@@ -44,15 +44,9 @@ class Payment(VoidableModel):
     """
     One payment a patient made for a treatment. Recording one raises
     `Treatment.total_paid` in the same transaction, so the existing screens
-    keep showing the right balance.
+    keep showing the right balance. The clinic does not track how a patient
+    paid (cash, card, ...), so a payment has no method.
     """
-
-    class Method(models.TextChoices):
-        CASH = "cash", _("Cash")
-        CARD = "card", _("Card")
-        CLICK = "click", _("Click")
-        PAYME = "payme", _("Payme")
-        TRANSFER = "transfer", _("Bank transfer")
 
     clinic = models.ForeignKey(
         User,
@@ -87,7 +81,6 @@ class Payment(VoidableModel):
         null=True,
     )
     amount = models.PositiveBigIntegerField()
-    method = models.CharField(max_length=20, choices=Method.choices)
     date = models.DateField()
     note = models.CharField(max_length=500, blank=True, null=True)
     created_by = models.ForeignKey(

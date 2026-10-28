@@ -4,6 +4,7 @@ from django.test import TestCase
 from apps.calendars.models import Appointment
 from apps.clinic.models import Treatment
 from apps.core.reporting import clinic_today
+from apps.finance.models import Payment
 from apps.finance.tests.factories import (
     client_for,
     make_admin,
@@ -99,27 +100,47 @@ class TreatmentPaidTotalTests(TestCase):
         self.patient = make_patient(self.clinic)
         self.owner = client_for(self.clinic)
 
-    def test_a_new_treatment_cannot_start_paid(self):
+    def test_the_amount_paid_up_front_becomes_a_payment_of_today(self):
+        body = {
+            "patient": self.patient.id,
+            "doctor": self.doctor.id,
+            "total_treatment_cost": 1_000_000,
+            "visit_number": 1,
+            "start_date": "2026-03-01",
+        }
+        response = self.owner.post(
+            TREATMENTS_URL, [{**body, "total_paid": 500_000}, body], format="json"
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        paid, unpaid = Treatment.objects.order_by("id")
+        self.assertEqual(paid.total_paid, 500_000)
+        self.assertEqual(unpaid.total_paid, 0)
+        payment = Payment.objects.get()
+        self.assertEqual(
+            (payment.treatment, payment.patient, payment.doctor, payment.amount, payment.date),
+            (paid, self.patient, self.doctor, 500_000, clinic_today()),
+        )
+        self.assertEqual(payment.created_by, self.clinic)
+
+    def test_paying_more_than_the_cost_up_front_is_refused(self):
         body = {
             "patient": self.patient.id,
             "doctor": self.doctor.id,
             "total_treatment_cost": 100,
+            "total_paid": 101,
             "visit_number": 1,
             "start_date": "2026-03-01",
         }
-        refused = self.owner.post(TREATMENTS_URL, [{**body, "total_paid": 50}], format="json")
-        self.assertEqual(refused.status_code, 400)
+        self.assertEqual(self.owner.post(TREATMENTS_URL, [body], format="json").status_code, 400)
         self.assertFalse(Treatment.objects.exists())
-
-        created = self.owner.post(TREATMENTS_URL, [body], format="json")
-        self.assertEqual(created.status_code, 200, created.data)
-        self.assertEqual(Treatment.objects.get().total_paid, 0)
+        self.assertFalse(Payment.objects.exists())
 
     def test_an_edit_never_overwrites_what_payments_set(self):
         treatment = make_treatment(self.clinic, self.patient, self.doctor, cost=1_000, start_date=date(2026, 3, 1))
         paid = self.owner.post(
             "/api/v1/finance/payments/",
-            {"treatment": treatment.id, "amount": 400, "method": "cash", "date": "2026-03-02"},
+            {"treatment": treatment.id, "amount": 400, "date": "2026-03-02"},
             format="json",
         )
         self.assertEqual(paid.status_code, 201, paid.data)

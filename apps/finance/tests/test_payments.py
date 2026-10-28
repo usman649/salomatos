@@ -29,7 +29,6 @@ class PaymentTests(TestCase):
         body = {
             "treatment": self.treatment.id,
             "amount": 300_000,
-            "method": "card",
             "date": "2026-02-01",
             **overrides,
         }
@@ -69,9 +68,8 @@ class PaymentTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["errors"]["date"], "before_treatment_start")
 
-    def test_zero_and_unknown_method_are_refused(self):
+    def test_zero_is_refused(self):
         self.assertEqual(self.pay(amount=0).status_code, 400)
-        self.assertEqual(self.pay(method="bitcoin").status_code, 400)
 
     def test_another_clinics_treatment_does_not_exist(self):
         other_clinic = make_clinic()
@@ -127,15 +125,15 @@ class PaymentTests(TestCase):
 
     def test_journal_lists_newest_first_and_filters(self):
         self.pay(amount=100_000, date="2026-02-01")
-        self.pay(amount=100_000, date="2026-03-01", method="cash")
+        self.pay(amount=100_000, date="2026-03-01")
 
         response = self.owner.get(URL, {"from": "2026-02-15", "to": "2026-03-31"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["date"], "2026-03-01")
-        by_method = self.owner.get(URL, {"method": "card"})
-        self.assertEqual(by_method.data["count"], 1)
+        by_treatment = self.owner.get(URL, {"treatment_id": self.treatment.id})
+        self.assertEqual(by_treatment.data["count"], 2)
         self.assertEqual(self.owner.get(URL, {"patient_id": "x"}).status_code, 400)
 
     def test_journal_is_per_clinic(self):
@@ -186,7 +184,7 @@ class PaymentDateTests(TestCase):
         treatment = make_treatment(clinic, make_patient(clinic), doctor, cost=10_000, start_date=date(2026, 1, 1))
         response = client_for(clinic).post(
             URL,
-            {"treatment": treatment.id, "amount": 10_000, "method": "cash", "date": clinic_today().isoformat()},
+            {"treatment": treatment.id, "amount": 10_000, "date": clinic_today().isoformat()},
             format="json",
         )
         self.assertEqual(response.status_code, 201, response.data)

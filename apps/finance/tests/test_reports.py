@@ -22,7 +22,7 @@ PAYROLL_URL = "/api/v1/finance/payroll/"
 ME_URL = "/api/v1/finance/me/"
 
 
-def pay(treatment, amount, day, method="cash"):
+def pay(treatment, amount, day):
     """A ledger payment as the API records it: the row plus the raised total."""
     Payment.objects.create(
         clinic=treatment.clinic,
@@ -30,7 +30,6 @@ def pay(treatment, amount, day, method="cash"):
         patient=treatment.patient,
         doctor=treatment.doctor,
         amount=amount,
-        method=method,
         date=day,
     )
     treatment.total_paid += amount
@@ -92,7 +91,7 @@ class FinanceOverviewTests(TestCase):
             self.clinic, self.bob, self.other_doctor, cost=600_000, start_date=date(2026, 3, 2),
             treatment_type=self.filling,
         )
-        pay(old, 400_000, date(2026, 3, 3), method="card")
+        pay(old, 400_000, date(2026, 3, 3))
         pay(new, 100_000, date(2026, 3, 2))
 
         response = self.overview()
@@ -113,8 +112,7 @@ class FinanceOverviewTests(TestCase):
         self.assertEqual(
             response.data["series"][1], {"start": "2026-03-02", "billed": 600_000, "collected": 100_000}
         )
-        methods = {row["method"]: row["amount"] for row in response.data["payment_methods"]}
-        self.assertEqual(methods, {"cash": 100_000, "card": 400_000, "click": 0, "payme": 0, "transfer": 0})
+        self.assertNotIn("payment_methods", response.data)
         self.assertEqual(
             [(row["doctor"], row["collected"]) for row in response.data["doctors"]],
             [("Doctor A", 400_000), ("Doctor B", 100_000)],

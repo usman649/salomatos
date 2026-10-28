@@ -21,7 +21,6 @@ class PaymentListSerializer(serializers.Serializer):
     doctor_id = serializers.IntegerField()
     doctor = serializers.CharField(source="doctor.full_name", default=None)
     amount = serializers.IntegerField()
-    method = serializers.CharField()
     note = serializers.CharField()
     is_void = serializers.BooleanField()
     void_reason = serializers.CharField()
@@ -38,7 +37,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payment
-        fields = ["treatment", "amount", "method", "date", "note"]
+        fields = ["treatment", "amount", "date", "note"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

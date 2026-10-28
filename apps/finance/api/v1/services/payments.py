@@ -12,7 +12,6 @@ from apps.finance.api.v1.serializers.payments import (
     PaymentCreateSerializer,
     PaymentListSerializer,
 )
-from apps.finance.models import Payment
 
 
 class PaymentService(BaseService):
@@ -38,15 +37,6 @@ class PaymentService(BaseService):
                         errors={param: "invalid"},
                     )
                 payments = payments.filter(**{field: int(value)})
-        method = params.get("method")
-        if method:
-            if method not in Payment.Method.values:
-                raise ValidationError(
-                    message="Unknown payment method.",
-                    message_key="invalid_params",
-                    errors={"method": "invalid_choice"},
-                )
-            payments = payments.filter(method=method)
 
         return self.get_paginated_response(
             payments,

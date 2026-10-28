@@ -27,12 +27,6 @@ class PaymentCreateListView(APIView):
             openapi.Parameter("to", openapi.IN_QUERY, type=openapi.TYPE_STRING, format="date"),
             openapi.Parameter("patient_id", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
             openapi.Parameter("treatment_id", openapi.IN_QUERY, type=openapi.TYPE_INTEGER),
-            openapi.Parameter(
-                "method",
-                openapi.IN_QUERY,
-                type=openapi.TYPE_STRING,
-                enum=["cash", "card", "click", "payme", "transfer"],
-            ),
         ],
     )
     def get(self, request, *args, **kwargs):

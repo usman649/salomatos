@@ -64,9 +64,6 @@ class FinanceReportRepository:
     def billed_by_date(self, clinic_id, start, end):
         return _sum_by(self._treatments(clinic_id, start, end), "start_date", "total_treatment_cost")
 
-    def collected_by_method(self, clinic_id, start, end):
-        return _sum_by(self._payments(clinic_id, start, end), "method", "amount")
-
     def collected_by_doctor(self, clinic_id, start, end):
         return _sum_by(
             self._payments(clinic_id, start, end).filter(doctor__isnull=False),

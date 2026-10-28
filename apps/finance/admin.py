@@ -11,9 +11,8 @@ from apps.finance.models import (
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ["id", "date", "amount", "method", "doctor", "voided_at"]
+    list_display = ["id", "date", "amount", "doctor", "voided_at"]
     list_display_links = ["id", "date"]
-    list_filter = ["method"]
     raw_id_fields = ["clinic", "treatment", "patient", "doctor", "created_by", "voided_by"]
 
 

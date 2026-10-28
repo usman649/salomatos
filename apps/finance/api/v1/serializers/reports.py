@@ -29,11 +29,6 @@ class FinancePointSerializer(serializers.Serializer):
     collected = serializers.IntegerField()
 
 
-class MethodAmountSerializer(serializers.Serializer):
-    method = serializers.CharField()
-    amount = serializers.IntegerField()
-
-
 class DoctorCollectedSerializer(serializers.Serializer):
     doctor_id = serializers.IntegerField()
     doctor = serializers.CharField()
@@ -58,7 +53,6 @@ class FinanceOverviewSerializer(RangeSerializer):
     totals = FinanceTotalsSerializer()
     previous_totals = FinanceTotalsSerializer(allow_null=True)
     series = FinancePointSerializer(many=True)
-    payment_methods = MethodAmountSerializer(many=True)
     doctors = DoctorCollectedSerializer(many=True)
     treatment_types = TreatmentTypeBilledSerializer(many=True)
     top_debtors = DebtorSerializer(many=True)
