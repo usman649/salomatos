@@ -5,6 +5,10 @@ from apps.authentication.models import User
 from apps.calendars.models import Appointment
 from apps.clinic.models import Treatment
 
+# Treatments completed before `completed_date` existed have none; they count
+# on the day they started, the only date they have.
+COMPLETED_ON = Coalesce("completed_date", "start_date")
+
 
 class StatisticsRepository:
     """
@@ -29,11 +33,10 @@ class StatisticsRepository:
         return queryset
 
     def _completed_treatments(self, start, end):
-        # Completion day as recorded, else the start day (see TreatmentCompletion).
         return (
             self._treatments()
             .filter(status=Treatment.Status.COMPLETED)
-            .annotate(completed_on=Coalesce("completion__completed_on", "start_date"))
+            .annotate(completed_on=COMPLETED_ON)
             .filter(completed_on__range=(start, end))
         )
 
@@ -117,7 +120,7 @@ class StatisticsRepository:
         return (
             self._treatments()
             .filter(start_date__lte=as_of)
-            .annotate(completed_on=Coalesce("completion__completed_on", "start_date"))
+            .annotate(completed_on=COMPLETED_ON)
             .exclude(status=Treatment.Status.COMPLETED, completed_on__lte=as_of)
             .count()
         )

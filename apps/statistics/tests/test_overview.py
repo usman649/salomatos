@@ -1,6 +1,4 @@
 from datetime import date, time
-from unittest import mock
-
 from django.test import TestCase
 
 from apps.calendars.models import Appointment
@@ -15,42 +13,56 @@ from apps.finance.tests.factories import (
     make_treatment,
     make_treatment_type,
 )
-from apps.statistics.models import TreatmentCompletion
 
 URL = "/api/v1/statistics/overview/"
 ME_URL = "/api/v1/statistics/me/"
-TODAY = "apps.statistics.signals.clinic_today"
+TREATMENTS_URL = "/api/v1/clinic/treatments/"
 
 
-class TreatmentCompletionTests(TestCase):
+class CompletedDateTests(TestCase):
+    """The treatments API carries the completion date the statistics count by."""
+
     def setUp(self):
-        clinic = make_clinic()
-        doctor = make_doctor(clinic)
-        self.treatment = make_treatment(clinic, make_patient(clinic), doctor, cost=100, start_date=date(2026, 3, 1))
+        self.clinic = make_clinic()
+        self.doctor = make_doctor(self.clinic)
+        self.patient = make_patient(self.clinic)
+        self.owner = client_for(self.clinic)
 
-    def complete(self, day):
-        with mock.patch(TODAY, return_value=day):
-            self.treatment.status = Treatment.Status.COMPLETED
-            self.treatment.save()
+    def create(self, **fields):
+        body = {
+            "patient": self.patient.id,
+            "doctor": self.doctor.id,
+            "total_treatment_cost": 100,
+            "total_paid": 0,
+            "visit_number": 1,
+            "start_date": "2026-03-01",
+            **fields,
+        }
+        return self.owner.post(TREATMENTS_URL, [body], format="json")
 
-    def test_completion_day_is_recorded_when_the_status_changes(self):
-        self.assertFalse(TreatmentCompletion.objects.exists())
-        self.complete(date(2026, 3, 9))
-        self.assertEqual(self.treatment.completion.completed_on, date(2026, 3, 9))
+    def test_a_completed_treatment_keeps_its_date(self):
+        response = self.create(status="completed", completed_date="2026-03-09")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(Treatment.objects.get().completed_date, date(2026, 3, 9))
 
-    def test_saving_a_completed_treatment_again_keeps_the_day(self):
-        self.complete(date(2026, 3, 9))
-        with mock.patch(TODAY, return_value=date(2026, 4, 1)):
-            self.treatment.notes = "Follow-up"
-            self.treatment.save()
-        self.treatment.completion.refresh_from_db()
-        self.assertEqual(self.treatment.completion.completed_on, date(2026, 3, 9))
+    def test_a_date_without_completion_is_dropped(self):
+        self.create(status="in_progress", completed_date="2026-03-09")
+        self.assertIsNone(Treatment.objects.get().completed_date)
 
-    def test_reopening_removes_the_completion(self):
-        self.complete(date(2026, 3, 9))
-        self.treatment.status = Treatment.Status.IN_PROGRESS
-        self.treatment.save()
-        self.assertFalse(TreatmentCompletion.objects.exists())
+    def test_reopening_clears_the_date(self):
+        self.create(status="completed", completed_date="2026-03-09")
+        treatment = Treatment.objects.get()
+        response = self.owner.patch(
+            f"{TREATMENTS_URL}{treatment.id}/", {"status": "in_progress"}, format="json"
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        treatment.refresh_from_db()
+        self.assertIsNone(treatment.completed_date)
+
+    def test_completion_before_the_start_is_refused(self):
+        response = self.create(status="completed", completed_date="2026-02-28")
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Treatment.objects.exists())
 
 
 class StatisticsOverviewTests(TestCase):
@@ -72,13 +84,11 @@ class StatisticsOverviewTests(TestCase):
         make_appointment(self.clinic, self.colleague, self.newcomer, date(2026, 3, 3), at=time(15, 0))
         make_appointment(self.clinic, self.colleague, None, date(2026, 3, 3), at=time(15, 0), guest_name="Guest")
 
-        completed = make_treatment(
+        make_treatment(
             self.clinic, self.returning, self.doctor, cost=100, start_date=date(2026, 2, 20),
             treatment_type=self.filling, tooth_number=36,
+            status=Treatment.Status.COMPLETED, completed_date=date(2026, 3, 4),
         )
-        with mock.patch(TODAY, return_value=date(2026, 3, 4)):
-            completed.status = Treatment.Status.COMPLETED
-            completed.save()
         make_treatment(self.clinic, self.newcomer, self.colleague, cost=100, start_date=date(2026, 3, 3))
 
     def overview(self, client=None, url=URL, start="2026-03-01", end="2026-03-07"):
@@ -128,6 +138,13 @@ class StatisticsOverviewTests(TestCase):
         )
         self.assertEqual(len(data["teeth"]), 32)
         self.assertEqual({row["tooth"]: row["count"] for row in data["teeth"]}["36"], 1)
+
+    def test_a_completed_treatment_without_a_date_counts_on_its_start(self):
+        make_treatment(
+            self.clinic, self.newcomer, self.doctor, cost=100, start_date=date(2026, 3, 5),
+            status=Treatment.Status.COMPLETED,
+        )
+        self.assertEqual(self.overview()["totals"]["treatments_completed"], 2)
 
     def test_previous_totals_cover_the_window_before(self):
         previous = self.overview()["previous_totals"]

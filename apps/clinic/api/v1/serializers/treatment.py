@@ -14,6 +14,7 @@ class TreatmentListSerializer(serializers.Serializer):
     visit_number = serializers.IntegerField()
     tooth_number = serializers.IntegerField()
     start_date = serializers.DateField()
+    completed_date = serializers.DateField()
     notes = serializers.CharField()
     status = serializers.CharField()
 
@@ -39,9 +40,23 @@ class TreatmentCreateUpdateSerializer(serializers.ModelSerializer):
             'visit_number',
             'tooth_number',
             'start_date',
+            'completed_date',
             'notes',
             'status',
         ]
+
+    def validate(self, attrs):
+        status = attrs.get('status', getattr(self.instance, 'status', None))
+        start_date = attrs.get('start_date', getattr(self.instance, 'start_date', None))
+        completed_date = attrs.get('completed_date', getattr(self.instance, 'completed_date', None))
+        if status != Treatment.Status.COMPLETED:
+            # Reopened or never finished: there is no completion date to keep.
+            attrs['completed_date'] = None
+        elif completed_date and start_date and completed_date < start_date:
+            raise serializers.ValidationError(
+                {'completed_date': 'Completion date cannot be before the start date.'}
+            )
+        return attrs
 
 class TreatmentTypeListSerializer(serializers.Serializer):
     id = serializers.IntegerField()
