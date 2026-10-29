@@ -14,7 +14,7 @@ def doctor_patients(queryset, doctor):
 
 class PatientRepository:
     def get_patients(self,clinic_id,doctor=None):
-        patients = User.objects.filter(role=User.Roles.PATIENT,clinic=clinic_id)
+        patients = User.objects.filter(role=User.Roles.PATIENT,clinic=clinic_id,is_active=True)
         if doctor is not None:
             patients = doctor_patients(patients, doctor)
         return patients
