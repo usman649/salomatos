@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.clinic.models import Treatment, TreatmentType
 from apps.finance.models import Payment
+from apps.core.permissions import limit_to_clinic
 from django.db import transaction
 from django.utils import timezone
 
@@ -67,6 +68,10 @@ class TreatmentCreateUpdateSerializer(serializers.ModelSerializer):
             'notes',
             'status',
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        limit_to_clinic(self)
 
     def validate(self, attrs):
         if self.instance is not None:

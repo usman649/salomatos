@@ -5,6 +5,7 @@ from apps.clinic.api.v1.serializers.patients import (
     PatientDetailSerializer,
 )
 from apps.core.services import BaseService
+from apps.core.permissions import get_clinic, own_doctor
 from apps.clinic.api.v1.filters.patients import PatientFilter
 from apps.authentication.models import User
 from apps.core.exceptions import (
@@ -18,9 +19,12 @@ class PatientService(BaseService):
     def __init__(self,request):
         super().__init__(request)
         self.db = PatientRepository()
+        self.clinic = get_clinic(request.user)
+        # A doctor works only with their own records; others see the whole clinic.
+        self.doctor = own_doctor(request.user)
 
     def get_patients(self,*args,**kwargs):
-        unfiltered_patients = self.db.get_patients(clinic_id=self.request.user)
+        unfiltered_patients = self.db.get_patients(clinic_id=self.clinic, doctor=self.doctor)
         filtered_patients = PatientFilter(
             data=self.request.query_params,
             queryset=unfiltered_patients,
@@ -41,7 +45,7 @@ class PatientService(BaseService):
         serializer_class.is_valid(raise_exception=True)
         patient = serializer_class.save(
             role=User.Roles.PATIENT,
-            clinic=self.request.user,
+            clinic=self.clinic,
 
         )
         return self.get_response_object(
@@ -51,7 +55,7 @@ class PatientService(BaseService):
         )
 
     def get_patient(self,*args,**kwargs):
-        patient = self.db.get_patient(user_id=kwargs.get('pk'),clinic_id=self.request.user)
+        patient = self.db.get_patient(user_id=kwargs.get('pk'),clinic_id=self.clinic, doctor=self.doctor)
         return self.get_response(
             patient,
             PatientDetailSerializer,
@@ -59,7 +63,7 @@ class PatientService(BaseService):
         )
 
     def update_patient(self, *args, **kwargs):
-        patient = self.db.get_patient(user_id=kwargs.get('pk'),clinic_id=self.request.user)
+        patient = self.db.get_patient(user_id=kwargs.get('pk'),clinic_id=self.clinic, doctor=self.doctor)
         serializer_class = PatientCreateUpdateSerializer(
             instance=patient,
             data=self.request.data,

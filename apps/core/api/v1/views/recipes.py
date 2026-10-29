@@ -2,6 +2,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg  import openapi
 from rest_framework.views import APIView
+from apps.core.permissions import CLINICAL, STAFF, RoleByMethodPermission
 from apps.core.api.v1.serializers.recipes import (
     RecipeListSerializer,
     RecipeCreateUpdateSerializer,
@@ -11,7 +12,8 @@ from apps.core.api.v1.serializers.recipes import (
 from apps.core.api.v1.services.recipes import RecipeService
 
 class RecipeCreateListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleByMethodPermission]
+    allowed_roles = {"GET": STAFF, "POST": CLINICAL}
 
     @swagger_auto_schema(
         request_body=RecipeCreateUpdateSerializer,
@@ -32,7 +34,8 @@ class RecipeCreateListView(APIView):
 
 
 class RecipeDetailUpdateDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleByMethodPermission]
+    allowed_roles = {"DELETE": CLINICAL}
 
     @swagger_auto_schema(
         tags=['Recipe'],
