@@ -45,7 +45,7 @@ class Payment(VoidableModel):
     One payment a patient made for a treatment. Recording one raises
     `Treatment.total_paid` in the same transaction, so the existing screens
     keep showing the right balance. The clinic does not track how a patient
-    paid (cash, card, ...), so a payment has no method.
+    paid (cash, card, ...), so a payment has no method; neither has an expense.
     """
 
     clinic = models.ForeignKey(
@@ -138,12 +138,6 @@ EXPENSE_CATEGORY_KIND = {
 }
 
 
-class ExpenseMethod(models.TextChoices):
-    CASH = "cash", _("Cash")
-    CARD = "card", _("Card")
-    TRANSFER = "transfer", _("Bank transfer")
-
-
 class RecurringExpense(CreatedUpdatedAbstractModel):
     """
     A bill the clinic owes every month. Only a reminder: each month is still
@@ -159,7 +153,6 @@ class RecurringExpense(CreatedUpdatedAbstractModel):
     name = models.CharField(max_length=120)
     category = models.CharField(max_length=30, choices=ExpenseCategory.choices)
     amount = models.PositiveBigIntegerField()
-    method = models.CharField(max_length=20, choices=ExpenseMethod.choices)
     payee = models.CharField(max_length=120, blank=True, null=True)
     # 1-28, so every month has the day.
     day_of_month = models.PositiveSmallIntegerField()
@@ -202,7 +195,6 @@ class Expense(VoidableModel):
     date = models.DateField()
     category = models.CharField(max_length=30, choices=ExpenseCategory.choices)
     amount = models.PositiveBigIntegerField()
-    method = models.CharField(max_length=20, choices=ExpenseMethod.choices)
     payee = models.CharField(max_length=120, blank=True, null=True)
     note = models.CharField(max_length=500, blank=True, null=True)
     doctor = models.ForeignKey(

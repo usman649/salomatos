@@ -221,7 +221,7 @@ class PayrollTests(TestCase):
 
     def expense(self, category, amount, day):
         return Expense.objects.create(
-            clinic=self.clinic, category=category, amount=amount, method="cash", date=day, doctor=self.doctor
+            clinic=self.clinic, category=category, amount=amount, date=day, doctor=self.doctor
         )
 
     def payroll(self, month):

@@ -18,9 +18,9 @@ class PaymentAdmin(admin.ModelAdmin):
 
 @admin.register(Expense)
 class ExpenseAdmin(admin.ModelAdmin):
-    list_display = ["id", "date", "category", "amount", "method", "voided_at"]
+    list_display = ["id", "date", "category", "amount", "voided_at"]
     list_display_links = ["id", "date"]
-    list_filter = ["category", "method"]
+    list_filter = ["category"]
     raw_id_fields = ["clinic", "doctor", "recurring", "created_by", "voided_by"]
 
 

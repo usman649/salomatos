@@ -15,7 +15,6 @@ from apps.finance.models import (
     DoctorCompensation,
     Expense,
     ExpenseCategory,
-    ExpenseMethod,
     RecurringExpense,
 )
 
@@ -30,7 +29,6 @@ class ExpenseListSerializer(serializers.Serializer):
     date = serializers.DateField()
     category = serializers.CharField()
     amount = serializers.IntegerField()
-    method = serializers.CharField()
     payee = serializers.CharField()
     note = serializers.CharField()
     doctor_id = serializers.IntegerField()
@@ -60,7 +58,7 @@ class ExpenseCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Expense
-        fields = ["date", "category", "amount", "method", "payee", "note", "doctor"]
+        fields = ["date", "category", "amount", "payee", "note", "doctor"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -97,7 +95,6 @@ class RecurringExpenseListSerializer(serializers.Serializer):
     name = serializers.CharField()
     category = serializers.CharField()
     amount = serializers.IntegerField()
-    method = serializers.CharField()
     payee = serializers.CharField()
     day_of_month = serializers.IntegerField()
     is_active = serializers.BooleanField()
@@ -119,7 +116,7 @@ class RecurringExpenseCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RecurringExpense
-        fields = ["name", "category", "amount", "method", "payee", "day_of_month", "is_active"]
+        fields = ["name", "category", "amount", "payee", "day_of_month", "is_active"]
         extra_kwargs = {"is_active": {"required": False}}
 
     def validate_payee(self, value):
@@ -130,7 +127,6 @@ class PayDueSerializer(serializers.Serializer):
     month = MonthField()
     date = serializers.DateField(validators=[validate_not_future])
     amount = AmountField()
-    method = serializers.ChoiceField(choices=ExpenseMethod.choices)
     note = serializers.CharField(
         max_length=NOTE_MAX, required=False, allow_null=True, allow_blank=True
     )
@@ -148,7 +144,6 @@ class DueItemSerializer(serializers.Serializer):
     name = serializers.CharField()
     category = serializers.CharField()
     amount = serializers.IntegerField()
-    method = serializers.CharField()
     payee = serializers.CharField(allow_null=True)
     due_date = serializers.DateField()
     status = serializers.CharField()

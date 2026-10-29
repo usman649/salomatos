@@ -27,7 +27,6 @@ class ExpenseJournalTests(TestCase):
             "date": "2026-03-05",
             "category": "rent",
             "amount": 12_000_000,
-            "method": "transfer",
             "payee": "Landlord",
             "note": "",
             "doctor": None,
@@ -176,7 +175,6 @@ class RecurringExpenseTests(TestCase):
             "name": "Rent",
             "category": "rent",
             "amount": 8_000_000,
-            "method": "transfer",
             "payee": "Landlord",
             "day_of_month": 5,
             **overrides,
@@ -189,7 +187,7 @@ class RecurringExpenseTests(TestCase):
     def pay(self, recurring_id, month, amount=8_100_000):
         return self.owner.post(
             f"{RECURRING_URL}{recurring_id}/pay/",
-            {"month": format_month(month), "date": clinic_today().isoformat(), "amount": amount, "method": "cash"},
+            {"month": format_month(month), "date": clinic_today().isoformat(), "amount": amount},
             format="json",
         )
 
@@ -312,7 +310,7 @@ class RecurringExpenseTests(TestCase):
         self.assertEqual(
             other.post(
                 f"{RECURRING_URL}{rent}/pay/",
-                {"month": "2026-01", "date": "2026-01-05", "amount": 1, "method": "cash"},
+                {"month": "2026-01", "date": "2026-01-05", "amount": 1},
                 format="json",
             ).status_code,
             404,

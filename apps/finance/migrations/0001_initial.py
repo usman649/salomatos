@@ -50,17 +50,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("amount", models.PositiveBigIntegerField()),
-                (
-                    "method",
-                    models.CharField(
-                        choices=[
-                            ("cash", "Cash"),
-                            ("card", "Card"),
-                            ("transfer", "Bank transfer"),
-                        ],
-                        max_length=20,
-                    ),
-                ),
                 ("payee", models.CharField(blank=True, max_length=120, null=True)),
                 ("day_of_month", models.PositiveSmallIntegerField()),
                 ("is_active", models.BooleanField(default=True)),
@@ -130,17 +119,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("amount", models.PositiveBigIntegerField()),
-                (
-                    "method",
-                    models.CharField(
-                        choices=[
-                            ("cash", "Cash"),
-                            ("card", "Card"),
-                            ("transfer", "Bank transfer"),
-                        ],
-                        max_length=20,
-                    ),
-                ),
                 ("payee", models.CharField(blank=True, max_length=120, null=True)),
                 ("note", models.CharField(blank=True, max_length=500, null=True)),
                 ("due_month", models.DateField(blank=True, null=True)),
