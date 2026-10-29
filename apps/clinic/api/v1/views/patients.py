@@ -2,6 +2,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg  import openapi
 from rest_framework.views import APIView
+from apps.core.permissions import OFFICE, OWNER, STAFF, RoleByMethodPermission
 from apps.clinic.api.v1.serializers.patients import (
     PatientListSerializer,
     PatientCreateUpdateSerializer,
@@ -11,7 +12,8 @@ from apps.clinic.api.v1.services.patients import PatientService
 
 
 class PatientCreateListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleByMethodPermission]
+    allowed_roles = {"GET": STAFF, "POST": OFFICE}
 
     @swagger_auto_schema(
         responses={200: PatientListSerializer},
@@ -60,7 +62,8 @@ class PatientCreateListView(APIView):
         return PatientService(request=request).create_patient(*args,**kwargs)
 
 class PatientDetailUpdateDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleByMethodPermission]
+    allowed_roles = {"GET": STAFF, "PATCH": OFFICE, "DELETE": OWNER}
     @swagger_auto_schema(
         responses={200: PatientDetailSerializer},
         tags=['Patient'],
@@ -79,4 +82,9 @@ class PatientDetailUpdateDeleteView(APIView):
     def patch(self,request,*args,**kwargs):
         return PatientService(request=request).update_patient(*args,**kwargs)
 
-
+    @swagger_auto_schema(
+        tags=['Patient'],
+        operation_description='Patient Delete (archives the patient, superadmin only)',
+    )
+    def delete(self,request,*args,**kwargs):
+        return PatientService(request=request).delete_patient(*args,**kwargs)

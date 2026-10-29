@@ -2,6 +2,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg  import openapi
 from rest_framework.views import APIView
+from apps.core.permissions import CLINICAL, STAFF, RoleByMethodPermission
 from apps.clinic.api.v1.serializers.galleries import (
     GalleryListSerializer,
     GalleryCreateUpdateSerializer,
@@ -9,7 +10,8 @@ from apps.clinic.api.v1.serializers.galleries import (
 from apps.clinic.api.v1.services.galleries import GalleryService
 
 class GalleryCreateListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleByMethodPermission]
+    allowed_roles = {"GET": STAFF, "POST": CLINICAL}
 
     @swagger_auto_schema(
         request_body=GalleryCreateUpdateSerializer,
@@ -30,7 +32,8 @@ class GalleryCreateListView(APIView):
 
 
 class GalleryDetailUpdateDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleByMethodPermission]
+    allowed_roles = {"PATCH": CLINICAL, "DELETE": CLINICAL}
     @swagger_auto_schema(
         request_body=GalleryCreateUpdateSerializer,
         responses={200: GalleryListSerializer},

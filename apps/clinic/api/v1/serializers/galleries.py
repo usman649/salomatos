@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.authentication.models import Gallery
+from apps.core.permissions import limit_to_clinic
 
 
 class GalleryListSerializer(serializers.Serializer):
@@ -16,3 +17,7 @@ class GalleryCreateUpdateSerializer(serializers.ModelSerializer):
             'user',
             'image',
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        limit_to_clinic(self)
